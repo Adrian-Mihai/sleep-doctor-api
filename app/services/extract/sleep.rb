@@ -4,7 +4,11 @@ module Extract
   class Sleep
     MINIMUM_SLEEP_DURATION = 4
 
-    def initialize(sleep_file_path:, sleep_stage_file_path:, sleep_combined_file_path:)
+    SLEEP_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.shealth.sleep.202202201504.csv'.freeze
+    SLEEP_STAGE_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.health.sleep_stage.202202201504.csv'.freeze
+    SLEEP_COMBINED_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.shealth.sleep_combined.202202201504.csv'.freeze
+
+    def initialize(sleep_file_path: SLEEP_FILE_PATH, sleep_stage_file_path: SLEEP_STAGE_FILE_PATH, sleep_combined_file_path: SLEEP_COMBINED_FILE_PATH)
       @sleep_file_content = CSV.read(sleep_file_path)
       @sleep_stage_file_content = CSV.read(sleep_stage_file_path)
       @sleep_combined_file_path = CSV.read(sleep_combined_file_path)
@@ -26,8 +30,7 @@ module Extract
         @data << extract_sleep_combined_data(row)
       end
 
-      @data.map { |sleep_record| sleep_record.merge(sleep_stages_attributes: extract_sleep_stages(sleep_record))
-}
+      @data.map { |sleep_record| sleep_record.merge(sleep_stages_attributes: extract_sleep_stages(sleep_record)) }
     end
 
     private
@@ -56,6 +59,7 @@ module Extract
           end_time: 30
         },
         sleep_stage: {
+          uuid: 10,
           start_time: 0,
           sleep_id: 1,
           stage: 5,
@@ -86,6 +90,13 @@ module Extract
         row[columns.dig(:sleep_combined, :duration)].present? &&
         row[columns.dig(:sleep_combined, :start_time)].present? &&
         row[columns.dig(:sleep_combined, :end_time)].present?
+    end
+
+    def valid_sleep_stage_row?(row)
+      row[columns.dig(:sleep_stage, :uuid)] &&
+        row[columns.dig(:sleep_stage, :start_time)] &&
+        row[columns.dig(:sleep_stage, :stage)] &&
+        row[columns.dig(:sleep_stage, :end_time)]
     end
 
     def grater_than_minimum_sleep_duration?(sleep_duration)
@@ -128,13 +139,17 @@ module Extract
         sleep_stages_rows = stages_array.flatten(1)
       end
 
-      sleep_stages_rows.map do |row|
+      sleep_stages = sleep_stages_rows.map do |row|
+        next unless valid_sleep_stage_row?(row)
+
         {
+          uuid: row[columns.dig(:sleep_stage, :uuid)],
           start_time: row[columns.dig(:sleep_stage, :start_time)],
           stage: row[columns.dig(:sleep_stage, :stage)][-1],
           end_time: row[columns.dig(:sleep_stage, :end_time)]
         }
       end
+      sleep_stages.compact
     end
 
     def find_sleep_stages(sleep_record_uuid)
