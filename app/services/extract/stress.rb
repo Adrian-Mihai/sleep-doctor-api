@@ -6,17 +6,12 @@ module Extract
 
     def initialize(stress_file_path: STRESS_FILE_FILE_PATH)
       @stress_file_content = CSV.read(stress_file_path)
-      @data = []
     end
 
     def perform
-      @stress_file_content[2..]&.each do |row|
-        next unless valid_row?(row)
-
-        @data << extract_stress_data(row)
-      end
-
-      @data
+      data = process_raw_data || []
+      data.compact!
+      data.sort_by { |record| record[:start_time] }
     end
 
     private
@@ -31,6 +26,14 @@ module Extract
       }
     end
 
+    def process_raw_data
+      @stress_file_content[2..]&.map do |row|
+        next unless valid_row?(row)
+
+        extract_data(row)
+      end
+    end
+
     def valid_row?(row)
       row[columns[:uuid]].present? &&
         row[columns[:start_time]].present? &&
@@ -38,7 +41,7 @@ module Extract
         row[columns[:end_time]].present?
     end
 
-    def extract_stress_data(row)
+    def extract_data(row)
       stress = {
         uuid: row[columns[:uuid]],
         start_time: row[columns[:start_time]],
