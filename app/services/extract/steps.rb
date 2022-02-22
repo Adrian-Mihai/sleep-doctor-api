@@ -9,7 +9,7 @@ module Extract
     end
 
     def perform
-      data = extract_data || []
+      data = process_raw_data || []
       data.compact!
       data.sort_by { |record| record[:date] }
     end
@@ -26,6 +26,14 @@ module Extract
       }
     end
 
+    def process_raw_data
+      @step_file_content[2..]&.map do |row|
+        next unless valid_row?(row)
+
+        extract_data(row)
+      end
+    end
+
     def valid_row?(row)
       row[columns[:uuid]].present? &&
         row[columns[:date]].present? &&
@@ -34,15 +42,7 @@ module Extract
         row[columns[:calories]].present?
     end
 
-    def extract_data
-      @step_file_content[2..]&.map do |row|
-        next unless valid_row?(row)
-
-        extract_step_record(row)
-      end
-    end
-
-    def extract_step_record(row)
+    def extract_data(row)
       {
         uuid: row[columns[:uuid]],
         date: Time.at(row[columns[:date]].to_i / 1000).utc.strftime('%F %T'),

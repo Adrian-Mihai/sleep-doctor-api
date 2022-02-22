@@ -16,21 +16,9 @@ module Extract
     end
 
     def perform
-      @sleep_file_content[2..]&.each do |row|
-        next if row[columns[:combined_id]].present?
-        next unless valid_row?(row) && grater_than_minimum_sleep_duration?(row[columns[:duration]].to_i)
-
-        @data << extract_sleep_data(row)
-      end
-
-      @sleep_combined_file_path[2..]&.each do |row|
-        sleep_duration = row[columns.dig(:sleep_combined, :duration)].to_i
-        next unless valid_combined_row?(row) && grater_than_minimum_sleep_duration?(sleep_duration)
-
-        @data << extract_sleep_combined_data(row)
-      end
-
-      @data.map { |sleep_record| sleep_record.merge(sleep_stages_attributes: extract_sleep_stages(sleep_record)) }
+      data = process_raw_data
+      data.compact!
+      data.sort_by { |record| record[:start_time] }
     end
 
     private
@@ -66,6 +54,30 @@ module Extract
           end_time: 9
         }
       }
+    end
+
+    def process_raw_data
+      data = (process_sleep_file || []).compact
+      data += ((process_combined_sleep_file || [])).compact
+      data.map { |sleep_record| sleep_record.merge(sleep_stages_attributes: extract_sleep_stages(sleep_record)) }
+    end
+
+    def process_sleep_file
+      @sleep_file_content[2..]&.map do |row|
+        next if row[columns[:combined_id]].present?
+        next unless valid_row?(row) && grater_than_minimum_sleep_duration?(row[columns[:duration]].to_i)
+
+        extract_sleep_data(row)
+      end
+    end
+
+    def process_combined_sleep_file
+      @sleep_combined_file_path[2..]&.map do |row|
+        sleep_duration = row[columns.dig(:sleep_combined, :duration)].to_i
+        next unless valid_combined_row?(row) && grater_than_minimum_sleep_duration?(sleep_duration)
+
+        extract_sleep_combined_data(row)
+      end
     end
 
     def valid_row?(row)
