@@ -1,7 +1,5 @@
-require 'csv'
-
 module Extract
-  class Sleep
+  class Sleep < Extract::Base
     MINIMUM_SLEEP_DURATION = 4
 
     SLEEP_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.shealth.sleep.202202201504.csv'.freeze
@@ -13,12 +11,6 @@ module Extract
       @sleep_stage_file_content = CSV.read(sleep_stage_file_path)
       @sleep_combined_file_path = CSV.read(sleep_combined_file_path)
       @data = []
-    end
-
-    def perform
-      data = process_raw_data
-      data.compact!
-      data.sort_by { |record| record[:start_time] }
     end
 
     private

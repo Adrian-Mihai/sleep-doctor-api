@@ -1,17 +1,9 @@
-require 'csv'
-
 module Extract
-  class Stress
+  class Stress < Extract::Base
     STRESS_FILE_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.shealth.stress.202202201504.csv'.freeze
 
     def initialize(stress_file_path: STRESS_FILE_FILE_PATH)
       @stress_file_content = CSV.read(stress_file_path)
-    end
-
-    def perform
-      data = process_raw_data || []
-      data.compact!
-      data.sort_by { |record| record[:start_time] }
     end
 
     private
