@@ -1,17 +1,9 @@
-require 'csv'
-
 module Extract
-  class Steps
+  class Steps < Extract::Base
     STEPS_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.shealth.tracker.pedometer_day_summary.202202201504.csv'.freeze
 
     def initialize(step_file_path: STEPS_FILE_PATH)
       @step_file_content = CSV.read(step_file_path)
-    end
-
-    def perform
-      data = process_raw_data || []
-      data.compact!
-      data.sort_by { |record| record[:date] }
     end
 
     private
@@ -50,6 +42,10 @@ module Extract
         walk: row[columns[:walk]],
         calories: row[columns[:calories]].to_f.round(2)
       }
+    end
+
+    def sort_column
+      :date
     end
   end
 end

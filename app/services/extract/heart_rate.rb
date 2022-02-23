@@ -1,17 +1,9 @@
-require 'csv'
-
 module Extract
-  class HeartRate
+  class HeartRate < Extract::Base
     HEART_RATE_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.shealth.tracker.heart_rate.202202201504.csv'.freeze
 
     def initialize(heart_rate_file_path: HEART_RATE_FILE_PATH)
       @heart_rate_file_content = CSV.read(heart_rate_file_path)
-    end
-
-    def perform
-      data = process_raw_data || []
-      data.compact!
-      data.sort_by { |record| record[:start_time] }
     end
 
     private
