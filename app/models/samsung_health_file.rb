@@ -1,0 +1,3 @@
+class SamsungHealthFile < PersonalFile
+
+end
