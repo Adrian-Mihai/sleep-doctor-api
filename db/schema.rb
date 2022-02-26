@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_26_140455) do
+ActiveRecord::Schema.define(version: 2022_02_26_190933) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -94,9 +94,26 @@ ActiveRecord::Schema.define(version: 2022_02_26_140455) do
     t.index ["uuid"], name: "index_users_on_uuid", unique: true
   end
 
+  create_table "values", force: :cascade do |t|
+    t.string "uuid", null: false
+    t.bigint "user_id"
+    t.string "type", null: false
+    t.datetime "start_time", precision: 6, null: false
+    t.integer "min", null: false
+    t.integer "average", null: false
+    t.integer "max", null: false
+    t.datetime "end_time", precision: 6, null: false
+    t.jsonb "payload"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["user_id"], name: "index_values_on_user_id"
+    t.index ["uuid"], name: "index_values_on_uuid", unique: true
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "personal_files", "users"
   add_foreign_key "sleep_sessions", "users"
   add_foreign_key "sleep_stages", "sleep_sessions"
+  add_foreign_key "values", "users"
 end
