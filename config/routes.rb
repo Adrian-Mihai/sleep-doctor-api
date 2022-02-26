@@ -3,4 +3,12 @@ Rails.application.routes.draw do
 
   root to: 'application#version'
   get '/version', to: 'application#version'
+
+  namespace :api do
+    namespace :v1 do
+      resources :users, only: :create do
+        resources :samsung_health, only: :create
+      end
+    end
+  end
 end
