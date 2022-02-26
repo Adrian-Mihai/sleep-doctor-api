@@ -7,4 +7,5 @@ class User < ApplicationRecord
   validates :terms_and_conditions, inclusion: { in: [true], message: 'must be accepted' }
 
   has_many :samsung_health_files, dependent: :destroy
+  has_many :sleep_sessions, dependent: :destroy
 end
