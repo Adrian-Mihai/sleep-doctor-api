@@ -8,4 +8,6 @@ class User < ApplicationRecord
 
   has_many :samsung_health_files, dependent: :destroy
   has_many :sleep_sessions, dependent: :destroy
+  has_many :heart_rate_values, dependent: :destroy
+  has_many :stress_values, dependent: :destroy
 end
