@@ -1,16 +1,24 @@
+require 'zip'
 require 'csv'
 
 module Extract
   class Base
+    def initialize(uuid:)
+      @samsung_health_file = SamsungHealthFile.find_by(uuid: uuid)
+    end
+
     def perform
-      def perform
-        data = process_raw_data || []
-        data.compact!
-        data.sort_by { |record| record[sort_column] }
-      end
+      unzip
+      data = process_raw_data || []
+      data.compact!
+      data.sort_by { |record| record[sort_column] }
     end
 
     private
+
+    def unzip
+      raise NotImplementedError, 'Implement in subclass'
+    end
 
     def columns
       raise NotImplementedError, 'Implement in subclass'

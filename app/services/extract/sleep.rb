@@ -2,18 +2,19 @@ module Extract
   class Sleep < Extract::Base
     MINIMUM_SLEEP_DURATION = 4
 
-    SLEEP_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.shealth.sleep.202202201504.csv'.freeze
-    SLEEP_STAGE_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.health.sleep_stage.202202201504.csv'.freeze
-    SLEEP_COMBINED_FILE_PATH = '/Volumes/GoogleDrive/My Drive/samsunghealth_ardelean.adrian.mihai_202202201504/com.samsung.shealth.sleep_combined.202202201504.csv'.freeze
-
-    def initialize(sleep_file_path: SLEEP_FILE_PATH, sleep_stage_file_path: SLEEP_STAGE_FILE_PATH, sleep_combined_file_path: SLEEP_COMBINED_FILE_PATH)
-      @sleep_file_content = CSV.read(sleep_file_path)
-      @sleep_stage_file_content = CSV.read(sleep_stage_file_path)
-      @sleep_combined_file_path = CSV.read(sleep_combined_file_path)
-      @data = []
-    end
+    SLEEP_FILE_PATH = '*/com.samsung.shealth.sleep.*.csv'.freeze
+    SLEEP_STAGE_FILE_PATH = '*/com.samsung.health.sleep_stage.*.csv'.freeze
+    SLEEP_COMBINED_FILE_PATH = '*/com.samsung.shealth.sleep_combined.*.csv'.freeze
 
     private
+
+    def unzip
+      Zip::File.open_buffer(@samsung_health_file.zip_file.download) do |zip_file|
+        @sleep_file_content = CSV.parse(zip_file.glob(SLEEP_FILE_PATH).first.get_input_stream.read)
+        @sleep_stage_file_content = CSV.parse(zip_file.glob(SLEEP_STAGE_FILE_PATH).first.get_input_stream.read)
+        @sleep_combined_file_content = CSV.parse(zip_file.glob(SLEEP_COMBINED_FILE_PATH).first.get_input_stream.read)
+      end
+    end
 
     def columns
       {
@@ -64,7 +65,7 @@ module Extract
     end
 
     def process_combined_sleep_file
-      @sleep_combined_file_path[2..]&.map do |row|
+      @sleep_combined_file_content[2..]&.map do |row|
         sleep_duration = row[columns.dig(:sleep_combined, :duration)].to_i
         next unless valid_combined_row?(row) && grater_than_minimum_sleep_duration?(sleep_duration)
 
@@ -110,9 +111,9 @@ module Extract
     def extract_sleep_data(row)
       {
         uuid: row[columns[:uuid]],
-        mental_recovery: row[columns[:mental_recovery]],
-        physical_recovery: row[columns[:physical_recovery]],
-        efficiency: row[columns[:efficiency]],
+        mental_recovery: row[columns[:mental_recovery]].to_i,
+        physical_recovery: row[columns[:physical_recovery]].to_i,
+        efficiency: row[columns[:efficiency]].to_i,
         score: row[columns[:score]],
         cycle: row[columns[:cycle]],
         duration: row[columns[:duration]],
@@ -124,9 +125,9 @@ module Extract
     def extract_sleep_combined_data(row)
       {
         uuid: row[columns.dig(:sleep_combined, :uuid)],
-        mental_recovery: row[columns.dig(:sleep_combined, :mental_recovery)],
-        physical_recovery: row[columns.dig(:sleep_combined, :physical_recovery)],
-        efficiency: row[columns.dig(:sleep_combined, :efficiency)],
+        mental_recovery: row[columns.dig(:sleep_combined, :mental_recovery)].to_i,
+        physical_recovery: row[columns.dig(:sleep_combined, :physical_recovery)].to_i,
+        efficiency: row[columns.dig(:sleep_combined, :efficiency)].to_i,
         score: row[columns.dig(:sleep_combined, :score)],
         cycle: row[columns.dig(:sleep_combined, :cycle)],
         duration: row[columns.dig(:sleep_combined, :duration)],
@@ -149,7 +150,7 @@ module Extract
         {
           uuid: row[columns.dig(:sleep_stage, :uuid)],
           start_time: row[columns.dig(:sleep_stage, :start_time)],
-          stage: row[columns.dig(:sleep_stage, :stage)][-1],
+          stage: row[columns.dig(:sleep_stage, :stage)][-1].to_i,
           end_time: row[columns.dig(:sleep_stage, :end_time)]
         }
       end
