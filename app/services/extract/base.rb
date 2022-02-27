@@ -11,7 +11,7 @@ module Extract
       unzip
       data = process_raw_data || []
       data.compact!
-      data.sort_by { |record| record[sort_column] }
+      data.sort_by { |record| record[:start_time] }
     end
 
     private
@@ -34,10 +34,6 @@ module Extract
 
     def extract_data(_row)
       raise NotImplementedError, 'Implement in subclass'
-    end
-
-    def sort_column
-      :start_time
     end
   end
 end

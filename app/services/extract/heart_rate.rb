@@ -33,9 +33,9 @@ module Extract
           heart_rate[:payload] = JSON.parse(binning_data_file.get_input_stream.read, symbolize_names: true).map do |binning_data|
             {
               start_time: Time.at(binning_data[:start_time] / 1000).utc.strftime('%F %T'),
-              min: binning_data[:heart_rate_min].to_i,
-              average: binning_data[:heart_rate].to_i,
-              max: binning_data[:heart_rate_max].to_i,
+              min: binning_data[:heart_rate_min].to_f.round(2),
+              mean: binning_data[:heart_rate].to_f.round(2),
+              max: binning_data[:heart_rate_max].to_f.round(2),
               end_time: Time.at(binning_data[:end_time] / 1000).utc.strftime('%F %T')
             }
           end
@@ -59,9 +59,9 @@ module Extract
       {
         uuid: row[columns[:uuid]],
         start_time: row[columns[:start_time]],
-        min: row[columns[:min]].to_i,
-        average: row[columns[:heart_rate]].to_i,
-        max: row[columns[:max]].to_i,
+        min: row[columns[:min]].to_f.round(2),
+        mean: row[columns[:heart_rate]].to_f.round(2),
+        max: row[columns[:max]].to_f.round(2),
         end_time: row[columns[:end_time]],
         payload: []
       }

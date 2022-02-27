@@ -1,5 +1,5 @@
 class SleepStage < ApplicationRecord
-  enum stage: { awaken: 1, light_sleep: 2, deep_sleep: 3, rem: 4 }
+  enum stage: { Awaken: 1, 'Light Sleep': 2, 'Deep Sleep': 3, REM: 4 }
 
   AWAKEN = 1
   LIGHT_SLEEP = 2
