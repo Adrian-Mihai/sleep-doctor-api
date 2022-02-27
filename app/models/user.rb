@@ -3,6 +3,7 @@ class User < ApplicationRecord
 
   validates :uuid, :email, presence: true, uniqueness: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :age, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :password, confirmation: true, length: { minimum: 8 }, if: -> { password.present? }
   validates :terms_and_conditions, inclusion: { in: [true], message: 'must be accepted' }
 
@@ -10,4 +11,5 @@ class User < ApplicationRecord
   has_many :sleep_sessions, dependent: :destroy
   has_many :heart_rate_values, dependent: :destroy
   has_many :stress_values, dependent: :destroy
+  has_many :exercises, dependent: :destroy
 end

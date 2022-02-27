@@ -9,7 +9,7 @@ module Api
       private
 
       def sanitize_params
-        params.require(:user).permit(:email, :password, :password_confirmation, :terms_and_conditions)
+        params.require(:user).permit(:email, :age, :password, :password_confirmation, :terms_and_conditions)
       end
     end
   end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_26_190933) do
+ActiveRecord::Schema.define(version: 2022_02_27_103029) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -41,6 +41,23 @@ ActiveRecord::Schema.define(version: 2022_02_26_190933) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "exercises", force: :cascade do |t|
+    t.string "uuid", null: false
+    t.bigint "user_id"
+    t.datetime "start_time", precision: 6, null: false
+    t.integer "exercise_type", null: false
+    t.integer "duration", null: false
+    t.float "burned_calorie", null: false
+    t.float "min_heart_rate", null: false
+    t.float "mean_heart_rate", null: false
+    t.float "max_heart_rate", null: false
+    t.datetime "end_time", precision: 6, null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["user_id"], name: "index_exercises_on_user_id"
+    t.index ["uuid"], name: "index_exercises_on_uuid", unique: true
   end
 
   create_table "personal_files", force: :cascade do |t|
@@ -86,6 +103,7 @@ ActiveRecord::Schema.define(version: 2022_02_26_190933) do
   create_table "users", force: :cascade do |t|
     t.string "uuid", null: false
     t.string "email", null: false
+    t.integer "age", null: false
     t.string "password_digest"
     t.boolean "terms_and_conditions", default: false, null: false
     t.datetime "created_at", precision: 6, null: false
@@ -99,9 +117,9 @@ ActiveRecord::Schema.define(version: 2022_02_26_190933) do
     t.bigint "user_id"
     t.string "type", null: false
     t.datetime "start_time", precision: 6, null: false
-    t.integer "min", null: false
-    t.integer "average", null: false
-    t.integer "max", null: false
+    t.float "min", null: false
+    t.float "mean", null: false
+    t.float "max", null: false
     t.datetime "end_time", precision: 6, null: false
     t.jsonb "payload"
     t.datetime "created_at", precision: 6, null: false
@@ -112,6 +130,7 @@ ActiveRecord::Schema.define(version: 2022_02_26_190933) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "exercises", "users"
   add_foreign_key "personal_files", "users"
   add_foreign_key "sleep_sessions", "users"
   add_foreign_key "sleep_stages", "sleep_sessions"

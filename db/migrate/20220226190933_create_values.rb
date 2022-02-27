@@ -5,9 +5,9 @@ class CreateValues < ActiveRecord::Migration[6.1]
       t.belongs_to :user, foreign_key: true
       t.string :type, null: false
       t.datetime :start_time, null: false, precision: 6
-      t.integer :min, null: false
-      t.integer :average, null: false
-      t.integer :max, null: false
+      t.float :min, null: false
+      t.float :mean, null: false
+      t.float :max, null: false
       t.datetime :end_time, null: false, precision: 6
       t.jsonb :payload
 
