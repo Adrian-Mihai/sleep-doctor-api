@@ -1,0 +1,1 @@
+class RoomSensorsFile < PersonalFile; end

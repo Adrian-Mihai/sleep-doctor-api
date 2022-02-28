@@ -8,6 +8,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :users, only: :create do
         resources :samsung_health, only: :create
+        resources :room_sensors, only: :create
       end
     end
   end

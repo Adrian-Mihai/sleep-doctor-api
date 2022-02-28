@@ -12,4 +12,9 @@ class User < ApplicationRecord
   has_many :heart_rate_values, dependent: :destroy
   has_many :stress_values, dependent: :destroy
   has_many :exercises, dependent: :destroy
+
+  has_many :room_sensors_files, dependent: :destroy
+  has_many :temperature_values, dependent: :destroy
+  has_many :humidity_values, dependent: :destroy
+  has_many :co2_values, dependent: :destroy
 end
