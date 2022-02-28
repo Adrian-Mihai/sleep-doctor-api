@@ -1,3 +1,1 @@
-class SamsungHealthFile < PersonalFile
-
-end
+class SamsungHealthFile < PersonalFile; end
