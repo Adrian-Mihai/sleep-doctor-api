@@ -32,11 +32,11 @@ module Extract
           stress = extract_data(row)
           stress[:payload] = JSON.parse(binning_data_file.get_input_stream.read, symbolize_names: true).map do |binning_data|
             {
-              start_time: Time.at(binning_data[:start_time] / 1000).utc.strftime('%F %T'),
+              start_time: Time.at(binning_data[:start_time] / 1000).utc.strftime('%F %T %z'),
               min: binning_data[:score_min].to_f.round(2),
               mean: binning_data[:score].to_f.round(2),
               max: binning_data[:score_max].to_f.round(2),
-              end_time: Time.at(binning_data[:end_time] / 1000).utc.strftime('%F %T')
+              end_time: Time.at(binning_data[:end_time] / 1000).utc.strftime('%F %T %z')
             }
           end
           stress
