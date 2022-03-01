@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       resources :users, only: :create do
         resources :samsung_health, only: :create
         resources :room_sensors, only: :create
+        resources :data, only: :index
       end
     end
   end

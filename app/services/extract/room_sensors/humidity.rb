@@ -5,8 +5,8 @@ module Extract
 
       def extract_data(row)
         {
-          start_time: Time.parse(row['date']).utc.strftime('%F %T'),
-          end_time: (Time.parse(row['date']).utc + 59).strftime('%F %T'),
+          start_time: Time.parse(row['date']).utc.strftime('%F %T %z'),
+          end_time: (Time.parse(row['date']).utc + 59).strftime('%F %T %z'),
           min: (row['humidity_min'] || row['humidity']).to_f.round(2),
           mean: (row['humidity_mean'] || row['humidity']).to_f.round(2),
           max: (row['humidity_max'] || row['humidity']).to_f.round(2)
