@@ -7,7 +7,7 @@ module Api
         relation = "#{params[:type]}_values"
         return render json: {}, status: :bad_request unless user.respond_to?(relation)
 
-        data = if params[:extended]
+        data = if params[:extended] == 'true'
                  payload = user.public_send(relation).order(:start_time).pluck(:payload)
                  payload.flatten!
                  payload.map do |record|
