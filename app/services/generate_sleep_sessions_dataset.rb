@@ -19,6 +19,7 @@ class GenerateSleepSessionsDataset
         co2_level = calculate_mean_value(room_co2_level_dataset, sleep_session.start_time, sleep_session.end_time)
         heart_rate = calculate_mean_value(heart_rate_dataset, sleep_session.start_time, sleep_session.end_time)
         stress_level = calculate_mean_value(stress_level_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time)
+        exercises = calculate_daily_exercises(sleep_sessions[index - 1].end_time, sleep_session.start_time)
         next if temperature.nil? || humidity.nil? || co2_level.nil? || heart_rate.nil? || stress_level.nil?
 
         @sleep_sessions_dataset << {
@@ -36,6 +37,8 @@ class GenerateSleepSessionsDataset
           room_mean_co2_level: co2_level,
           sleep_session_mean_heart_rate: heart_rate,
           day_time_mean_stress_level: stress_level,
+          exercise_sessions_burned_calories: exercises[:burned_calories],
+          exercise_sessions_duration: exercises[:duration],
           score: sleep_session.score,
           end_time: sleep_session.end_time.localtime.strftime('%F %T %z')
         }
@@ -57,6 +60,18 @@ class GenerateSleepSessionsDataset
 
     total = subset.sum { |record| record[:mean] }
     (total / subset.count).round(2)
+  end
+
+  def calculate_daily_exercises(start_time, end_time)
+    exercises = exercises_dataset.find_all { |record| (start_time..end_time).cover?(record[:start_time]) }
+    burned_calories = exercises.sum { |exercise| exercise[:burned_calorie] }
+    duration = exercises.sum { |exercise| exercise[:duration] }
+
+    { burned_calories: burned_calories, duration: milliseconds_to_minutes(duration) }
+  end
+
+  def milliseconds_to_minutes(duration)
+    (duration.to_f / 60000).round
   end
 
   def room_temperature_dataset
