@@ -7,6 +7,7 @@ class SleepSession < ApplicationRecord
   validates :physical_recovery, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
   validates :efficiency, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
   validates :score, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
+  validates :movement_duration, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :cycle, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :duration, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :start_time, presence: true

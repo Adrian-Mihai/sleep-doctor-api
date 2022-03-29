@@ -1,6 +1,6 @@
 module Extract
   class HeartRate < Extract::Base
-    HEART_RATE_FILE_PATH = '*/com.samsung.shealth.tracker.heart_rate.*.csv'.freeze
+    HEART_RATE_FILE_PATH = '*/com.samsung.shealth.tracker.heart_rate.[0-9]*.csv'.freeze
 
     private
 

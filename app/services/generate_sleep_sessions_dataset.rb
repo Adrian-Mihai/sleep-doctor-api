@@ -14,29 +14,32 @@ class GenerateSleepSessionsDataset
       sleep_sessions.each_with_index do |sleep_session, index|
         next if index.zero?
 
-        temperature = calculate_mean_value(room_temperature_dataset, sleep_session.start_time, sleep_session.end_time)
-        humidity = calculate_mean_value(room_humidity_dataset, sleep_session.start_time, sleep_session.end_time)
-        co2_level = calculate_mean_value(room_co2_level_dataset, sleep_session.start_time, sleep_session.end_time)
-        heart_rate = calculate_mean_value(heart_rate_dataset, sleep_session.start_time, sleep_session.end_time)
-        stress_level = calculate_mean_value(stress_level_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time)
+        temperature = calculate_mean_values(room_temperature_dataset, sleep_session.start_time, sleep_session.end_time, 2)
+        humidity = calculate_mean_values(room_humidity_dataset, sleep_session.start_time, sleep_session.end_time, 2)
+        co2_level = calculate_mean_values(room_co2_level_dataset, sleep_session.start_time, sleep_session.end_time, 2)
+        sleep_session_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_session.start_time, sleep_session.end_time, 2)
+        day_time_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time)
+        day_time_stress_level = calculate_mean_values(stress_level_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time)
         exercises = calculate_daily_exercises(sleep_sessions[index - 1].end_time, sleep_session.start_time)
-        next if temperature.nil? || humidity.nil? || co2_level.nil? || heart_rate.nil? || stress_level.nil?
+        next if temperature.nil? || humidity.nil? || co2_level.nil? || sleep_session_heart_rate.nil? || day_time_heart_rate.nil? || day_time_stress_level.nil?
 
         @sleep_sessions_dataset << {
           start_time: sleep_session.start_time.localtime.strftime('%F %T %z'),
-          mental_recovery: sleep_session.mental_recovery,
-          physical_recovery: sleep_session.physical_recovery,
+          #mental_recovery: sleep_session.mental_recovery,
+          #physical_recovery: sleep_session.physical_recovery,
           awake_stage_duration: calculate_sleep_stage_duration(sleep_session, awake_stage),
           light_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, light_sleep_stage),
           deep_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, deep_sleep_stage),
           rem_stage_duration: calculate_sleep_stage_duration(sleep_session, rem_stage),
           cycle: sleep_session.cycle,
+          awake_movement_duration: sleep_session.movement_duration,
           sleep_session_duration: sleep_session.duration,
           room_mean_temperature: temperature,
           room_mean_humidity: humidity,
           room_mean_co2_level: co2_level,
-          sleep_session_mean_heart_rate: heart_rate,
-          day_time_mean_stress_level: stress_level,
+          sleep_session_mean_heart_rate: sleep_session_heart_rate,
+          day_time_mean_stress_level: day_time_stress_level,
+          day_time_mean_heart_rate: day_time_heart_rate,
           exercise_sessions_burned_calories: exercises[:burned_calories],
           exercise_sessions_duration: exercises[:duration],
           score: sleep_session.score,
@@ -53,6 +56,18 @@ class GenerateSleepSessionsDataset
   end
 
   private
+
+  def calculate_mean_values(dataset, start_time, end_time, set_size=4)
+    subset = dataset.find_all { |record| (start_time..end_time).cover?(record[:start_time]) }
+    return if subset.empty?
+
+    result = {}
+    subset.each_slice(set_size).with_index do |set, index|
+      total = set.sum { |record| record[:mean] }
+      result[index] = (total / set.count).round(2)
+    end
+    result
+  end
 
   def calculate_mean_value(dataset, start_time, end_time)
     subset = dataset.find_all { |record| (start_time..end_time).cover?(record[:start_time]) }

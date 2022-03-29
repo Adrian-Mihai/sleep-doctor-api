@@ -2,9 +2,9 @@ module Extract
   class Sleep < Extract::Base
     MINIMUM_SLEEP_DURATION = 4
 
-    SLEEP_FILE_PATH = '*/com.samsung.shealth.sleep.*.csv'.freeze
-    SLEEP_STAGE_FILE_PATH = '*/com.samsung.health.sleep_stage.*.csv'.freeze
-    SLEEP_COMBINED_FILE_PATH = '*/com.samsung.shealth.sleep_combined.*.csv'.freeze
+    SLEEP_FILE_PATH = '*/com.samsung.shealth.sleep.[0-9]*.csv'.freeze
+    SLEEP_STAGE_FILE_PATH = '*/com.samsung.health.sleep_stage.[0-9]*.csv'.freeze
+    SLEEP_COMBINED_FILE_PATH = '*/com.samsung.shealth.sleep_combined.[0-9]*.csv'.freeze
 
     private
 
@@ -21,6 +21,7 @@ module Extract
         uuid: 34,
         mental_recovery: 1,
         physical_recovery: 15,
+        movements_duration: 17,
         efficiency: 22,
         score: 23,
         cycle: 21,
@@ -32,6 +33,7 @@ module Extract
           uuid: 31,
           mental_recovery: 2,
           physical_recovery: 17,
+          movements_duration: 19,
           efficiency: 26,
           score: 27,
           cycle: 25,
@@ -77,6 +79,7 @@ module Extract
       row[columns[:uuid]].present? &&
         row[columns[:mental_recovery]].present? &&
         row[columns[:physical_recovery]].present? &&
+        row[columns[:movements_duration]].present? &&
         row[columns[:efficiency]].present? &&
         row[columns[:score]].present? &&
         row[columns[:cycle]].present? &&
@@ -89,6 +92,7 @@ module Extract
       row[columns.dig(:sleep_combined, :uuid)].present? &&
         row[columns.dig(:sleep_combined, :mental_recovery)].present? &&
         row[columns.dig(:sleep_combined, :physical_recovery)].present? &&
+        row[columns.dig(:sleep_combined, :movements_duration)].present? &&
         row[columns.dig(:sleep_combined, :efficiency)].present? &&
         row[columns.dig(:sleep_combined, :score)].present? &&
         row[columns.dig(:sleep_combined, :cycle)].present? &&
@@ -113,6 +117,7 @@ module Extract
         uuid: row[columns[:uuid]],
         mental_recovery: row[columns[:mental_recovery]].to_i,
         physical_recovery: row[columns[:physical_recovery]].to_i,
+        movement_duration: row[columns[:movements_duration]].to_i,
         efficiency: row[columns[:efficiency]].to_i,
         score: row[columns[:score]],
         cycle: row[columns[:cycle]],
@@ -127,6 +132,7 @@ module Extract
         uuid: row[columns.dig(:sleep_combined, :uuid)],
         mental_recovery: row[columns.dig(:sleep_combined, :mental_recovery)].to_i,
         physical_recovery: row[columns.dig(:sleep_combined, :physical_recovery)].to_i,
+        movement_duration: row[columns.dig(:sleep_combined, :movements_duration)].to_i,
         efficiency: row[columns.dig(:sleep_combined, :efficiency)].to_i,
         score: row[columns.dig(:sleep_combined, :score)],
         cycle: row[columns.dig(:sleep_combined, :cycle)],

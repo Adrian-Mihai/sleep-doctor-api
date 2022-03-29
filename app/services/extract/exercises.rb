@@ -1,6 +1,6 @@
 module Extract
   class Exercises < Extract::Base
-    EXERCISE_FILE_PATH = '*/com.samsung.shealth.exercise.*.csv'.freeze
+    EXERCISE_FILE_PATH = '*/com.samsung.shealth.exercise.[0-9]*.csv'.freeze
 
     private
 
@@ -12,15 +12,15 @@ module Extract
 
     def columns
       {
-        uuid: 58,
-        start_time: 23,
-        type: 24,
-        duration: 19,
-        min_heart_rate: 38,
-        mean_heart_rate: 28,
-        max_heart_rate: 32,
-        calorie: 42,
-        end_time: 57
+        uuid: 59,
+        start_time: 24,
+        type: 25,
+        duration: 20,
+        min_heart_rate: 39,
+        mean_heart_rate: 29,
+        max_heart_rate: 33,
+        calorie: 43,
+        end_time: 58
       }
     end
 
