@@ -14,19 +14,22 @@ class GenerateSleepSessionsDataset
       sleep_sessions.each_with_index do |sleep_session, index|
         next if index.zero?
 
-        temperature = calculate_mean_values(room_temperature_dataset, sleep_session.start_time, sleep_session.end_time, 2)
-        humidity = calculate_mean_values(room_humidity_dataset, sleep_session.start_time, sleep_session.end_time, 2)
-        co2_level = calculate_mean_values(room_co2_level_dataset, sleep_session.start_time, sleep_session.end_time, 2)
-        sleep_session_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_session.start_time, sleep_session.end_time, 2)
-        day_time_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time)
-        day_time_stress_level = calculate_mean_values(stress_level_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time)
-        exercises = calculate_daily_exercises(sleep_sessions[index - 1].end_time, sleep_session.start_time)
-        next if temperature.nil? || humidity.nil? || co2_level.nil? || sleep_session_heart_rate.nil? || day_time_heart_rate.nil? || day_time_stress_level.nil?
+        temperature = calculate_mean_values(room_temperature_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
+        humidity = calculate_mean_values(room_humidity_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
+        co2_level = calculate_mean_values(room_co2_level_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
+        night_time_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
 
-        @sleep_sessions_dataset << {
+        day_time_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time, :day_time)
+        day_time_stress_level = calculate_mean_values(stress_level_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time, :day_time)
+
+        exercises = calculate_daily_exercises(sleep_sessions[index - 1].end_time, sleep_session.start_time)
+
+        next if invalid_values?(temperature, humidity, co2_level, night_time_heart_rate, day_time_heart_rate, day_time_stress_level)
+
+        payload = {
           start_time: sleep_session.start_time.localtime.strftime('%F %T %z'),
-          #mental_recovery: sleep_session.mental_recovery,
-          #physical_recovery: sleep_session.physical_recovery,
+          mental_recovery: sleep_session.mental_recovery,
+          physical_recovery: sleep_session.physical_recovery,
           awake_stage_duration: calculate_sleep_stage_duration(sleep_session, awake_stage),
           light_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, light_sleep_stage),
           deep_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, deep_sleep_stage),
@@ -34,17 +37,21 @@ class GenerateSleepSessionsDataset
           cycle: sleep_session.cycle,
           awake_movement_duration: sleep_session.movement_duration,
           sleep_session_duration: sleep_session.duration,
-          room_mean_temperature: temperature,
-          room_mean_humidity: humidity,
-          room_mean_co2_level: co2_level,
-          sleep_session_mean_heart_rate: sleep_session_heart_rate,
-          day_time_mean_stress_level: day_time_stress_level,
-          day_time_mean_heart_rate: day_time_heart_rate,
-          exercise_sessions_burned_calories: exercises[:burned_calories],
-          exercise_sessions_duration: exercises[:duration],
-          score: sleep_session.score,
-          end_time: sleep_session.end_time.localtime.strftime('%F %T %z')
         }
+
+        payload.merge!(night_time_heart_rate.transform_keys { |k| "night_time_mean_heart_rate_(#{k})" })
+        payload.merge!(temperature.transform_keys { |k| "night_time_room_mean_temperature_(#{k})" })
+        payload.merge!(humidity.transform_keys { |k| "night_time_room_mean_humidity_(#{k})" })
+        payload.merge!(co2_level.transform_keys { |k| "night_time_room_mean_co2_level_(#{k})" })
+        payload.merge!(day_time_heart_rate.transform_keys { |k| "day_time_mean_heart_rate_(#{k})" })
+        payload.merge!(day_time_stress_level.transform_keys { |k| "day_time_mean_stress_level_(#{k})" })
+
+        payload[:exercise_sessions_burned_calories] = exercises[:burned_calories]
+        payload[:exercise_sessions_duration] = exercises[:duration]
+        payload[:score] = sleep_session.score
+        payload[:end_time] = sleep_session.end_time.localtime.strftime('%F %T %z')
+
+        @sleep_sessions_dataset << payload
       end
     end
 
@@ -57,24 +64,47 @@ class GenerateSleepSessionsDataset
 
   private
 
-  def calculate_mean_values(dataset, start_time, end_time, set_size=4)
-    subset = dataset.find_all { |record| (start_time..end_time).cover?(record[:start_time]) }
-    return if subset.empty?
+  def invalid_values?(temperature, humidity, co2_level, night_time_heart_rate, day_time_heart_rate, day_time_stress_level)
+    return true if temperature.nil? || humidity.nil? || co2_level.nil? || night_time_heart_rate.nil? || day_time_heart_rate.nil? || day_time_stress_level.nil?
+    return false if temperature.size == 4 && humidity.size == 4 && co2_level.size == 4 && night_time_heart_rate.size == 4 && day_time_heart_rate.size == 4 && day_time_stress_level.size == 4
 
-    result = {}
-    subset.each_slice(set_size).with_index do |set, index|
-      total = set.sum { |record| record[:mean] }
-      result[index] = (total / set.count).round(2)
-    end
-    result
+    true
   end
 
-  def calculate_mean_value(dataset, start_time, end_time)
+  def calculate_mean_values(dataset, start_time, end_time, time)
     subset = dataset.find_all { |record| (start_time..end_time).cover?(record[:start_time]) }
     return if subset.empty?
 
-    total = subset.sum { |record| record[:mean] }
-    (total / subset.count).round(2)
+    periods = time == :day_time ? split_day_time_in_periods(start_time) : split_night_time_in_periods(end_time)
+    periods.map do |period|
+      period_values = subset.find_all { |record| (period.first..period.last).cover?(record[:start_time]) }
+      next if period_values.empty?
+
+      total = period_values.sum { |record| record[:mean] }
+      ["#{period.first.strftime('%H')}-#{period.last.strftime('%H')}", (total / period_values.count).round(2)]
+    end.compact.to_h
+  end
+
+  def split_day_time_in_periods(start_time)
+    start_period = start_time.at_beginning_of_day + 7.hours
+    periods = []
+    4.times do
+      end_period = start_period + 4.hours
+      periods << [start_period, end_period]
+      start_period = end_period
+    end
+    periods
+  end
+
+  def split_night_time_in_periods(end_time)
+    start_period = end_time.at_beginning_of_day - 1.hour
+    periods = []
+    4.times do
+      end_period = start_period + 2.hours
+      periods << [start_period, end_period]
+      start_period = end_period
+    end
+    periods
   end
 
   def calculate_daily_exercises(start_time, end_time)
