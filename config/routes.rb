@@ -7,6 +7,8 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :users, only: :create do
+        resources :sleep_sessions, only: :index
+
         resources :samsung_health, only: :create
         resources :room_sensors, only: :create
         resources :data, only: :index

@@ -1,6 +1,6 @@
 module Extract
   class Stress < Extract::Base
-    STRESS_FILE_FILE_PATH = '*/com.samsung.shealth.stress.*.csv'.freeze
+    STRESS_FILE_FILE_PATH = '*/com.samsung.shealth.stress.[0-9]*.csv'.freeze
 
     private
 

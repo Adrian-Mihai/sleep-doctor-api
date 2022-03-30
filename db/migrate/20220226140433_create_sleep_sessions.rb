@@ -6,6 +6,7 @@ class CreateSleepSessions < ActiveRecord::Migration[6.1]
       t.datetime :start_time, null: false, precision: 6
       t.integer :mental_recovery, null: false
       t.integer :physical_recovery, null: false
+      t.integer :movement_duration, null: false
       t.integer :efficiency, null: false
       t.integer :score, null: false
       t.integer :cycle, null: false
