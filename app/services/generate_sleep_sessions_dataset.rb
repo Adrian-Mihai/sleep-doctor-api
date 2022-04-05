@@ -1,7 +1,8 @@
 class GenerateSleepSessionsDataset
-  def initialize(user_uuid:)
+  def initialize(user_uuid:, allow_missing_values:)
     @errors = []
     @user = User.find_by!(uuid: user_uuid)
+    @allow_missing_values = allow_missing_values
   rescue ActiveRecord::RecordNotFound => e
     @errors << "#{e.model} not found"
   end
@@ -66,30 +67,29 @@ class GenerateSleepSessionsDataset
 
   def invalid_values?(temperature, humidity, co2_level, night_time_heart_rate, day_time_heart_rate, day_time_stress_level)
     return true if temperature.nil? || humidity.nil? || co2_level.nil? || night_time_heart_rate.nil? || day_time_heart_rate.nil? || day_time_stress_level.nil?
-    return false if temperature.size == 4 && humidity.size == 4 && co2_level.size == 4 && night_time_heart_rate.size == 4 && day_time_heart_rate.size == 4 && day_time_stress_level.size == 4
+    return false if temperature.size == 4 && humidity.size == 4 && co2_level.size == 4 && night_time_heart_rate.size == 4 && day_time_heart_rate.size == 8 && day_time_stress_level.size == 8
 
     true
   end
 
   def calculate_mean_values(dataset, start_time, end_time, time)
     subset = dataset.find_all { |record| (start_time..end_time).cover?(record[:start_time]) }
-    return if subset.empty?
+    return if subset.empty? && !allow_missing_values?
 
     periods = time == :day_time ? split_day_time_in_periods(start_time) : split_night_time_in_periods(end_time)
     periods.map do |period|
       period_values = subset.find_all { |record| (period.first..period.last).cover?(record[:start_time]) }
-      next if period_values.empty?
+      next if period_values.empty? && !allow_missing_values?
 
-      total = period_values.sum { |record| record[:mean] }
-      ["#{period.first.strftime('%H')}-#{period.last.strftime('%H')}", (total / period_values.count).round(2)]
+      ["#{period.first.strftime('%H')}-#{period.last.strftime('%H')}", calculate_mean_value(period_values)]
     end.compact.to_h
   end
 
   def split_day_time_in_periods(start_time)
     start_period = start_time.at_beginning_of_day + 7.hours
     periods = []
-    4.times do
-      end_period = start_period + 4.hours
+    8.times do
+      end_period = start_period + 2.hours
       periods << [start_period, end_period]
       start_period = end_period
     end
@@ -218,5 +218,15 @@ class GenerateSleepSessionsDataset
 
   def rem_stage
     SleepStage.stages.index(SleepStage::REM)
+  end
+
+  def calculate_mean_value(values)
+    return 0 if values.count.zero?
+
+    (values.sum { |record| record[:mean] } / values.count).round(2)
+  end
+
+  def allow_missing_values?
+    @allow_missing_values == 'true'
   end
 end
