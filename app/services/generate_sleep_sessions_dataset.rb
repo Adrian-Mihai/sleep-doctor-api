@@ -1,4 +1,8 @@
 class GenerateSleepSessionsDataset
+  attr_reader :errors
+
+  SLEEP_SESSIONS_BATCH_SIZE = 10
+
   def initialize(user_uuid:, allow_missing_values:)
     @errors = []
     @user = User.find_by!(uuid: user_uuid)
@@ -11,7 +15,7 @@ class GenerateSleepSessionsDataset
     return @sleep_sessions_dataset if defined? @sleep_sessions_dataset
 
     @sleep_sessions_dataset = []
-    @user.sleep_sessions.includes(:sleep_stages).order(:start_time).find_in_batches do |sleep_sessions|
+    @user.sleep_sessions.includes(:sleep_stages).order(:start_time).find_in_batches(batch_size: SLEEP_SESSIONS_BATCH_SIZE) do |sleep_sessions|
       sleep_sessions.each_with_index do |sleep_session, index|
         next if index.zero?
 
@@ -35,7 +39,7 @@ class GenerateSleepSessionsDataset
           light_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, light_sleep_stage),
           deep_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, deep_sleep_stage),
           rem_stage_duration: calculate_sleep_stage_duration(sleep_session, rem_stage),
-          cycle: sleep_session.cycle,
+          sleep_cycles: sleep_session.cycle,
           awake_movement_duration: sleep_session.movement_duration,
           sleep_session_duration: sleep_session.duration,
         }
@@ -67,7 +71,7 @@ class GenerateSleepSessionsDataset
 
   def invalid_values?(temperature, humidity, co2_level, night_time_heart_rate, day_time_heart_rate, day_time_stress_level)
     return true if temperature.nil? || humidity.nil? || co2_level.nil? || night_time_heart_rate.nil? || day_time_heart_rate.nil? || day_time_stress_level.nil?
-    return false if temperature.size == 4 && humidity.size == 4 && co2_level.size == 4 && night_time_heart_rate.size == 4 && day_time_heart_rate.size == 8 && day_time_stress_level.size == 8
+    return false if temperature.size == 4 && humidity.size == 4 && co2_level.size == 4 && night_time_heart_rate.size == 4 && day_time_heart_rate.size == 4 && day_time_stress_level.size == 4
 
     true
   end
@@ -81,16 +85,16 @@ class GenerateSleepSessionsDataset
       period_values = subset.find_all { |record| (period.first..period.last).cover?(record[:start_time]) }
       next if period_values.empty? && !allow_missing_values?
 
-      ["#{period.first.strftime('%H')}-#{period.last.strftime('%H')}", calculate_mean_value(period_values)]
+      ["#{period.first.strftime('%H')}-#{(period.last + 1).strftime('%H')}", calculate_mean_value(period_values)]
     end.compact.to_h
   end
 
   def split_day_time_in_periods(start_time)
     start_period = start_time.at_beginning_of_day + 7.hours
     periods = []
-    8.times do
-      end_period = start_period + 2.hours
-      periods << [start_period, end_period]
+    4.times do
+      end_period = start_period + 4.hours
+      periods << [start_period, (end_period - 1)]
       start_period = end_period
     end
     periods
@@ -101,7 +105,7 @@ class GenerateSleepSessionsDataset
     periods = []
     4.times do
       end_period = start_period + 2.hours
-      periods << [start_period, end_period]
+      periods << [start_period, (end_period - 1)]
       start_period = end_period
     end
     periods
