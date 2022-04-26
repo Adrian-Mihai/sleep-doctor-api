@@ -1,7 +1,7 @@
 class GenerateSleepSessionsDataset
   attr_reader :errors
 
-  SLEEP_SESSIONS_BATCH_SIZE = 10
+  SLEEP_SESSIONS_BATCH_SIZE = 1000
 
   def initialize(user_uuid:, allow_missing_values:)
     @errors = []
@@ -56,9 +56,10 @@ class GenerateSleepSessionsDataset
         payload[:score] = sleep_session.score
         payload[:end_time] = sleep_session.end_time.localtime.strftime('%F %T %z')
 
-        @sleep_sessions_dataset << payload
+        @sleep_sessions_dataset << payload.stringify_keys
       end
     end
+    replace_missing_values_with_mean if allow_missing_values?
 
     @sleep_sessions_dataset
   end
@@ -232,5 +233,80 @@ class GenerateSleepSessionsDataset
 
   def allow_missing_values?
     @allow_missing_values == 'true'
+  end
+
+  def replace_missing_values_with_mean
+    @sleep_sessions_dataset.each_with_index do |sleep_session, index|
+      subset = []
+      up_index = index
+      down_index = index
+
+      5.times do
+        up_index += 1
+        down_index -= 1
+        subset << @sleep_sessions_dataset[up_index] unless @sleep_sessions_dataset[up_index].nil?
+        subset << @sleep_sessions_dataset[down_index] unless down_index.negative?
+      end
+
+      night_time_mean_heart_rate_23_01 = (subset.pluck('night_time_mean_heart_rate_(23-01)').sum / subset.count).round(2)
+      night_time_mean_heart_rate_01_03 = (subset.pluck('night_time_mean_heart_rate_(01-03)').sum / subset.count).round(2)
+      night_time_mean_heart_rate_03_05 = (subset.pluck('night_time_mean_heart_rate_(03-05)').sum / subset.count).round(2)
+      night_time_mean_heart_rate_05_07 = (subset.pluck('night_time_mean_heart_rate_(05-07)').sum / subset.count).round(2)
+
+      night_time_room_mean_temperature_23_01 = (subset.pluck('night_time_room_mean_temperature_(23-01)').sum / subset.count).round(2)
+      night_time_room_mean_temperature_01_03 = (subset.pluck('night_time_room_mean_temperature_(01-03)').sum / subset.count).round(2)
+      night_time_room_mean_temperature_03_05 = (subset.pluck('night_time_room_mean_temperature_(03-05)').sum / subset.count).round(2)
+      night_time_room_mean_temperature_05_07 = (subset.pluck('night_time_room_mean_temperature_(05-07)').sum / subset.count).round(2)
+
+      night_time_room_mean_humidity_23_01 = (subset.pluck('night_time_room_mean_humidity_(23-01)').sum / subset.count).round(2)
+      night_time_room_mean_humidity_01_03 = (subset.pluck('night_time_room_mean_humidity_(01-03)').sum / subset.count).round(2)
+      night_time_room_mean_humidity_03_05 = (subset.pluck('night_time_room_mean_humidity_(03-05)').sum / subset.count).round(2)
+      night_time_room_mean_humidity_05_07 = (subset.pluck('night_time_room_mean_humidity_(05-07)').sum / subset.count).round(2)
+
+      night_time_room_mean_co2_level_23_01 = (subset.pluck('night_time_room_mean_co2_level_(23-01)').sum / subset.count).round(2)
+      night_time_room_mean_co2_level_01_03 = (subset.pluck('night_time_room_mean_co2_level_(01-03)').sum / subset.count).round(2)
+      night_time_room_mean_co2_level_03_05 = (subset.pluck('night_time_room_mean_co2_level_(03-05)').sum / subset.count).round(2)
+      night_time_room_mean_co2_level_05_07 = (subset.pluck('night_time_room_mean_co2_level_(05-07)').sum / subset.count).round(2)
+
+      day_time_mean_heart_rate_07_11 = (subset.pluck('day_time_mean_heart_rate_(07-11)').sum / subset.count).round(2)
+      day_time_mean_heart_rate_11_15 = (subset.pluck('day_time_mean_heart_rate_(11-15)').sum / subset.count).round(2)
+      day_time_mean_heart_rate_15_19 = (subset.pluck('day_time_mean_heart_rate_(15-19)').sum / subset.count).round(2)
+      day_time_mean_heart_rate_19_23 = (subset.pluck('day_time_mean_heart_rate_(19-23)').sum / subset.count).round(2)
+
+      day_time_mean_stress_level_07_11 = (subset.pluck('day_time_mean_stress_level_(07-11)').sum / subset.count).round(2)
+      day_time_mean_stress_level_11_15 = (subset.pluck('day_time_mean_stress_level_(11-15)').sum / subset.count).round(2)
+      day_time_mean_stress_level_15_19 = (subset.pluck('day_time_mean_stress_level_(15-19)').sum / subset.count).round(2)
+      day_time_mean_stress_level_19_23 = (subset.pluck('day_time_mean_stress_level_(19-23)').sum / subset.count).round(2)
+
+      sleep_session['night_time_mean_heart_rate_(23-01)'] = night_time_mean_heart_rate_23_01 if sleep_session['night_time_mean_heart_rate_(23-01)'].zero?
+      sleep_session['night_time_mean_heart_rate_(01-03)'] = night_time_mean_heart_rate_01_03 if sleep_session['night_time_mean_heart_rate_(01-03)'].zero?
+      sleep_session['night_time_mean_heart_rate_(03-05)'] = night_time_mean_heart_rate_03_05 if sleep_session['night_time_mean_heart_rate_(03-05)'].zero?
+      sleep_session['night_time_mean_heart_rate_(05-07)'] = night_time_mean_heart_rate_05_07 if sleep_session['night_time_mean_heart_rate_(05-07)'].zero?
+
+      sleep_session['night_time_room_mean_temperature_(23-01)'] = night_time_room_mean_temperature_23_01 if sleep_session['night_time_room_mean_temperature_(23-01)'].zero?
+      sleep_session['night_time_room_mean_temperature_(01-03)'] = night_time_room_mean_temperature_01_03 if sleep_session['night_time_room_mean_temperature_(01-03)'].zero?
+      sleep_session['night_time_room_mean_temperature_(03-05)'] = night_time_room_mean_temperature_03_05 if sleep_session['night_time_room_mean_temperature_(03-05)'].zero?
+      sleep_session['night_time_room_mean_temperature_(05-07)'] = night_time_room_mean_temperature_05_07 if sleep_session['night_time_room_mean_temperature_(05-07)'].zero?
+
+      sleep_session['night_time_room_mean_humidity_(23-01)'] = night_time_room_mean_humidity_23_01 if sleep_session['night_time_room_mean_humidity_(23-01)'].zero?
+      sleep_session['night_time_room_mean_humidity_(01-03)'] = night_time_room_mean_humidity_01_03 if sleep_session['night_time_room_mean_humidity_(01-03)'].zero?
+      sleep_session['night_time_room_mean_humidity_(03-05)'] = night_time_room_mean_humidity_03_05 if sleep_session['night_time_room_mean_humidity_(03-05)'].zero?
+      sleep_session['night_time_room_mean_humidity_(05-07)'] = night_time_room_mean_humidity_05_07 if sleep_session['night_time_room_mean_humidity_(05-07)'].zero?
+
+      sleep_session['night_time_room_mean_co2_level_(23-01)'] = night_time_room_mean_co2_level_23_01 if sleep_session['night_time_room_mean_co2_level_(23-01)'].zero?
+      sleep_session['night_time_room_mean_co2_level_(01-03)'] = night_time_room_mean_co2_level_01_03 if sleep_session['night_time_room_mean_co2_level_(01-03)'].zero?
+      sleep_session['night_time_room_mean_co2_level_(03-05)'] = night_time_room_mean_co2_level_03_05 if sleep_session['night_time_room_mean_co2_level_(03-05)'].zero?
+      sleep_session['night_time_room_mean_co2_level_(05-07)'] = night_time_room_mean_co2_level_05_07 if sleep_session['night_time_room_mean_co2_level_(05-07)'].zero?
+
+      sleep_session['day_time_mean_heart_rate_(07-11)'] = day_time_mean_heart_rate_07_11 if sleep_session['day_time_mean_heart_rate_(07-11)'].zero?
+      sleep_session['day_time_mean_heart_rate_(11-15)'] = day_time_mean_heart_rate_11_15 if sleep_session['day_time_mean_heart_rate_(11-15)'].zero?
+      sleep_session['day_time_mean_heart_rate_(15-19)'] = day_time_mean_heart_rate_15_19 if sleep_session['day_time_mean_heart_rate_(15-19)'].zero?
+      sleep_session['day_time_mean_heart_rate_(19-23)'] = day_time_mean_heart_rate_19_23 if sleep_session['day_time_mean_heart_rate_(19-23)'].zero?
+
+      sleep_session['day_time_mean_stress_level_(07-11)'] = day_time_mean_stress_level_07_11 if sleep_session['day_time_mean_stress_level_(07-11)'].zero?
+      sleep_session['day_time_mean_stress_level_(11-15)'] = day_time_mean_stress_level_11_15 if sleep_session['day_time_mean_stress_level_(11-15)'].zero?
+      sleep_session['day_time_mean_stress_level_(15-19)'] = day_time_mean_stress_level_15_19 if sleep_session['day_time_mean_stress_level_(15-19)'].zero?
+      sleep_session['day_time_mean_stress_level_(19-23)'] = day_time_mean_stress_level_19_23 if sleep_session['day_time_mean_stress_level_(19-23)'].zero?
+    end
   end
 end
