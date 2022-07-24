@@ -43,14 +43,14 @@ class GenerateSleepSessionsDataset
           awake_movement_duration: sleep_session.movement_duration,
           sleep_session_duration: sleep_session.duration,
         }
-        payload.merge!(day_time_heart_rate.transform_keys { |k| "day_time_[#{k}]_average_heart_rate" })
-        payload.merge!(day_time_stress_level.transform_keys { |k| "day_time_[#{k}]_average_stress_level" })
+        payload.merge!(day_time_heart_rate.transform_keys { |k| "day_time_(#{k})_average_heart_rate" })
+        payload.merge!(day_time_stress_level.transform_keys { |k| "day_time_(#{k})_average_stress_level" })
         payload[:exercise_sessions_burned_calories] = exercises[:burned_calories]
         payload[:exercise_sessions_duration] = exercises[:duration]
-        payload.merge!(night_time_heart_rate.transform_keys { |k| "night_time_[#{k}]_average_heart_rate" })
-        payload.merge!(temperature_readings.transform_keys { |k| "night_time_[#{k}]_average_room_temperature" })
-        payload.merge!(humidity_readings.transform_keys { |k| "night_time_[#{k}]_average_room_humidity" })
-        payload.merge!(co2_level_readings.transform_keys { |k| "night_time_[#{k}]_average_room_co2_level" })
+        payload.merge!(night_time_heart_rate.transform_keys { |k| "night_time_(#{k})_average_heart_rate" })
+        payload.merge!(temperature_readings.transform_keys { |k| "night_time_(#{k})_average_room_temperature" })
+        payload.merge!(humidity_readings.transform_keys { |k| "night_time_(#{k})_average_room_humidity" })
+        payload.merge!(co2_level_readings.transform_keys { |k| "night_time_(#{k})_average_room_co2_level" })
         payload[:score] = sleep_session.score
         payload[:end_time] = sleep_session.end_time.localtime.strftime('%F %T %z')
 
