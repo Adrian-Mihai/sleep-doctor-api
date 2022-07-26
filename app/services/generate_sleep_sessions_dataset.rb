@@ -18,44 +18,69 @@ class GenerateSleepSessionsDataset
     return @sleep_sessions_dataset if defined? @sleep_sessions_dataset
 
     @sleep_sessions_dataset = []
-    sleep_sessions.find_in_batches(batch_size: BATCH_SIZE) do |sleep_sessions|
-      sleep_sessions.each_with_index do |sleep_session, index|
-        next if index.zero?
-
-        day_time_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time, :day_time)
-        day_time_stress_level = calculate_mean_values(stress_level_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time, :day_time)
-        exercises = calculate_daily_exercises(sleep_sessions[index - 1].end_time, sleep_session.start_time)
-
-        night_time_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
-        temperature_readings = calculate_mean_values(room_temperature_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
-        humidity_readings = calculate_mean_values(room_humidity_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
-        co2_level_readings = calculate_mean_values(room_co2_level_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
-
-        payload = {
-          start_time: sleep_session.start_time.localtime.strftime('%F %T %z'),
-          mental_recovery: sleep_session.mental_recovery,
-          physical_recovery: sleep_session.physical_recovery,
-          awake_stage_duration: calculate_sleep_stage_duration(sleep_session, awake_stage),
-          light_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, light_sleep_stage),
-          deep_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, deep_sleep_stage),
-          rem_stage_duration: calculate_sleep_stage_duration(sleep_session, rem_stage),
-          sleep_cycles: sleep_session.cycle,
-          awake_movement_duration: sleep_session.movement_duration,
-          sleep_session_duration: sleep_session.duration,
-        }
-        payload.merge!(day_time_heart_rate.transform_keys { |k| "day_time_(#{k})_average_heart_rate" })
-        payload.merge!(day_time_stress_level.transform_keys { |k| "day_time_(#{k})_average_stress_level" })
-        payload[:exercise_sessions_burned_calories] = exercises[:burned_calories]
-        payload[:exercise_sessions_duration] = exercises[:duration]
-        payload.merge!(night_time_heart_rate.transform_keys { |k| "night_time_(#{k})_average_heart_rate" })
-        payload.merge!(temperature_readings.transform_keys { |k| "night_time_(#{k})_average_room_temperature" })
-        payload.merge!(humidity_readings.transform_keys { |k| "night_time_(#{k})_average_room_humidity" })
-        payload.merge!(co2_level_readings.transform_keys { |k| "night_time_(#{k})_average_room_co2_level" })
-        payload[:score] = sleep_session.score
-        payload[:end_time] = sleep_session.end_time.localtime.strftime('%F %T %z')
-
-        @sleep_sessions_dataset << payload.stringify_keys
+    # sleep_sessions.find_in_batches(batch_size: BATCH_SIZE) do |sleep_sessions|
+    #   sleep_sessions.each_with_index do |sleep_session, index|
+    #     next if index.zero?
+    #
+    #     day_time_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time, :day_time)
+    #     day_time_stress_level = calculate_mean_values(stress_level_dataset, sleep_sessions[index - 1].end_time, sleep_session.start_time, :day_time)
+    #     exercises = calculate_daily_exercises(sleep_sessions[index - 1].end_time, sleep_session.start_time)
+    #
+    #     night_time_heart_rate = calculate_mean_values(heart_rate_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
+    #     temperature_readings = calculate_mean_values(room_temperature_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
+    #     humidity_readings = calculate_mean_values(room_humidity_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
+    #     co2_level_readings = calculate_mean_values(room_co2_level_dataset, sleep_session.start_time, sleep_session.end_time, :night_time)
+    #
+    #     payload = {
+    #       start_time: sleep_session.start_time.localtime.strftime('%F %T %z'),
+    #       mental_recovery: sleep_session.mental_recovery,
+    #       physical_recovery: sleep_session.physical_recovery,
+    #       awake_stage_duration: calculate_sleep_stage_duration(sleep_session, awake_stage),
+    #       light_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, light_sleep_stage),
+    #       deep_sleep_stage_duration: calculate_sleep_stage_duration(sleep_session, deep_sleep_stage),
+    #       rem_stage_duration: calculate_sleep_stage_duration(sleep_session, rem_stage),
+    #       sleep_cycles: sleep_session.cycle,
+    #       awake_movement_duration: sleep_session.movement_duration,
+    #       sleep_session_duration: sleep_session.duration,
+    #     }
+    #     payload.merge!(day_time_heart_rate.transform_keys { |k| "day_time_(#{k})_average_heart_rate" })
+    #     payload.merge!(day_time_stress_level.transform_keys { |k| "day_time_(#{k})_average_stress_level" })
+    #     payload[:exercise_sessions_burned_calories] = exercises[:burned_calories]
+    #     payload[:exercise_sessions_duration] = exercises[:duration]
+    #     payload.merge!(night_time_heart_rate.transform_keys { |k| "night_time_(#{k})_average_heart_rate" })
+    #     payload.merge!(temperature_readings.transform_keys { |k| "night_time_(#{k})_average_room_temperature" })
+    #     payload.merge!(humidity_readings.transform_keys { |k| "night_time_(#{k})_average_room_humidity" })
+    #     payload.merge!(co2_level_readings.transform_keys { |k| "night_time_(#{k})_average_room_co2_level" })
+    #     payload[:score] = sleep_session.score
+    #     payload[:end_time] = sleep_session.end_time.localtime.strftime('%F %T %z')
+    #
+    #     @sleep_sessions_dataset << payload.stringify_keys
+    #   end
+    # end
+    previous_sleep_session = sleep_sessions.first
+    sleep_sessions.find_each(start: 2) do |current_sleep_session|
+      duration_between_sleep_sessions = ((current_sleep_session.end_time - previous_sleep_session.end_time) / 1.hour).round
+      if duration_between_sleep_sessions > 36
+        previous_sleep_session = current_sleep_session
+        next
       end
+
+      average_heart_rate_readings = calculate_mean_values(heart_rate_dataset, previous_sleep_session.end_time, current_sleep_session.end_time)
+      average_stress_level_readings = calculate_mean_values(stress_level_dataset, previous_sleep_session.end_time, current_sleep_session.end_time)
+      average_temperature_readings = calculate_mean_values(room_temperature_dataset, previous_sleep_session.end_time, current_sleep_session.end_time)
+      average_humidity_readings = calculate_mean_values(room_humidity_dataset, previous_sleep_session.end_time, current_sleep_session.end_time)
+      average_co2_level_readings = calculate_mean_values(room_co2_level_dataset, previous_sleep_session.end_time, current_sleep_session.end_time)
+
+      payload = {}
+      payload.merge!(average_heart_rate_readings.transform_keys { |k| "(#{k})_average_heart_rate" })
+      payload.merge!(average_stress_level_readings.transform_keys { |k| "(#{k})_average_stress_level" })
+      payload.merge!(average_temperature_readings.transform_keys { |k| "(#{k})_average_room_temperature" })
+      payload.merge!(average_humidity_readings.transform_keys { |k| "(#{k})_average_room_humidity" })
+      payload.merge!(average_co2_level_readings.transform_keys { |k| "(#{k})_average_room_co2_level" })
+      payload[:score] = current_sleep_session.score
+
+      @sleep_sessions_dataset << payload.stringify_keys
+      previous_sleep_session = current_sleep_session
     end
     @sleep_sessions_dataset
   end
@@ -130,15 +155,29 @@ class GenerateSleepSessionsDataset
     @room_co2_level_dataset
   end
 
-  def calculate_mean_values(dataset, start_time, end_time, time)
+  def calculate_mean_values(dataset, start_time, end_time)
     subset = dataset.find_all { |record| (start_time..end_time).cover?(record.start_time) }
 
-    periods = time == :day_time ? split_day_time_in_periods(start_time) : split_night_time_in_periods(end_time)
+    periods = split_time_in_periods(start_time, end_time)
     periods.map do |period|
       period_values = subset.find_all { |record| (period.first..period.last).cover?(record.start_time) }
 
       ["#{period.first.strftime('%H')}-#{(period.last + 1).strftime('%H')}", calculate_mean_value(period_values)]
     end.compact.to_h
+  end
+
+  def split_time_in_periods(start_time, end_time)
+    #start_period = start_time.hour.odd? ? start_time.beginning_of_hour : (start_time + 1.hour).beginning_of_hour
+    start_period = (start_time + 1.hour).beginning_of_hour
+    periods = []
+    while start_period < end_time
+      end_period = start_period + 2.hours
+      periods << [start_period, (end_period - 1.hour).end_of_hour]
+      start_period = end_period
+    end
+    # periods.first[0] = start_time
+    # periods.last[1] = end_time
+    periods
   end
 
   def split_day_time_in_periods(start_time)
