@@ -143,15 +143,12 @@ class GenerateSleepSessionsDataset
 
   def split_time_in_periods(start_time, end_time)
     start_period = start_time.hour.odd? ? start_time.beginning_of_hour : (start_time + 1.hour).beginning_of_hour
-    #start_period = (start_time + 1.hour).beginning_of_hour
     periods = []
-    while start_period < end_time
+    while start_period < end_time.beginning_of_hour
       end_period = start_period + 2.hours
       periods << [start_period, (end_period - 1.hour).end_of_hour]
       start_period = end_period
     end
-    # periods.first[0] = start_time
-    # periods.last[1] = end_time
     periods
   end
 
