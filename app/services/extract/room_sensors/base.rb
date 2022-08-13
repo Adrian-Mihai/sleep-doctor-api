@@ -20,12 +20,12 @@ module Extract
         Zip::File.open_buffer(@room_sensors_file.zip_file.download) do |zip_file|
           zip_file.each do |file|
             content = CSV.parse(file.get_input_stream.read, headers: true)&.sort_by { |row| Time.parse(row['date']) }
-            next if content.nil?
+            next if content.nil? || content.empty?
 
             utc_date = Time.parse(content.first['date']).utc
             start_time = utc_date.beginning_of_hour
             end_time = utc_date.end_of_hour
-            record = { uuid: SecureRandom.uuid, start_time: start_time.strftime('%F %T'), end_time: end_time.strftime('%F %T'), min: nil, mean: nil, max: nil, payload: [] }
+            record = { uuid: SecureRandom.uuid, start_time: start_time, end_time: end_time, min: nil, mean: nil, max: nil, payload: [] }
 
             content[1..]&.each do |row|
               utc_date = Time.parse(row['date']).utc
@@ -38,7 +38,7 @@ module Extract
 
                 start_time = utc_date.beginning_of_hour
                 end_time = utc_date.end_of_hour
-                record = { uuid: SecureRandom.uuid, start_time: start_time.strftime('%F %T'), end_time: end_time.strftime('%F %T'), min: nil, mean: nil, max: nil, payload: [] }
+                record = { uuid: SecureRandom.uuid, start_time: start_time, end_time: end_time, min: nil, mean: nil, max: nil, payload: [] }
               end
 
               record[:payload] << extract_data(row)

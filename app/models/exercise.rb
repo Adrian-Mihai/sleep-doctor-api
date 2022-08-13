@@ -1,6 +1,6 @@
 class Exercise < ApplicationRecord
-  enum exercise_type: { Walking: 1001, Running: 1002, 'Push-ups': 10004, Burpee: 10010, Squats: 10012, Crunches: 10023,
-                        'Leg-Raises': 10024, Plank: 10025 }
+  enum exercise_type: { Walking: 1001, Running: 1002, 'Push-ups': 10004, Burpee: 10010, Squats: 10012,
+                        Crunches: 10023, 'Leg-Raises': 10024, Plank: 10025, 'Cycling': 11007 }
 
   validates :uuid, presence: true, uniqueness: true
   validates :start_time, presence: true
